@@ -1,0 +1,76 @@
+Table User {
+  id UUID [pk]
+  username VARCHAR
+  first_name VARCHAR
+  last_name VARCHAR
+  email VARCHAR
+  is_staff BOOLEAN
+  is_active BOOLEAN
+  date_joined TIMESTAMP
+  user_type ENUM('player', 'organisator', 'admin')
+  location VARCHAR(255)
+  image TEXT
+}
+
+Table PlayerProfile {
+  id UUID [pk]
+  user UUID [ref: > User.id]
+  age INT
+  gender VARCHAR(10)
+  weight DECIMAL(5, 2)
+  favorite_sports VARCHAR(255)
+  skill_level VARCHAR(255)
+}
+
+Table Team {
+  id UUID [pk]
+  user UUID [ref: > User.id]
+  team_name VARCHAR(255)
+  sport VARCHAR(255)
+  skill_level VARCHAR(255)
+  description TEXT
+  location VARCHAR(255)
+}
+
+Table Match {
+  id UUID [pk]
+  team UUID [ref: > Team.id]
+  date_time TIMESTAMP
+  location VARCHAR(255)
+  sport VARCHAR(255)
+  required_skill_level VARCHAR(255)
+  players_needed INT
+  description TEXT
+}
+
+Table MatchRegistration {
+  id UUID [pk]
+  match UUID [ref: > Match.id]
+  player UUID [ref: > PlayerProfile.id]
+  status VARCHAR(255) [default: 'pending']
+}
+
+Table SportActivity {
+  id UUID [pk]
+  player UUID [ref: > PlayerProfile.id]
+  sport VARCHAR(255)
+  duration INT
+  calories_burned DECIMAL(6, 2)
+}
+
+Table Message {
+  id UUID [pk]
+  sender UUID [ref: > User.id]
+  recipient UUID [ref: > User.id]
+  content TEXT
+  sent_at TIMESTAMP
+  read BOOLEAN [default: false]
+}
+
+Table Notification {
+  recipient UUID [ref: > User.id]
+  message VARCHAR(255)
+  type ENUM('join_request', 'request_accepted', 'request_refused')
+  read BOOLEAN [default: false]
+  created_at TIMESTAMP
+}

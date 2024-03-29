@@ -58,3 +58,8 @@ python manage.py runserver
 Une fois le serveur lancé, accédez à `http://127.0.0.1:8000/swagger/` pour voir la documentation Swagger de l'API, vous permettant de tester facilement tous les endpoints disponibles.
 
 
+Pour  consulter la base de donénes  : 
+```bash
+https://dbdocs.io/sami.abdulhalim.pro/Yalla_Shoot_API
+```
+
