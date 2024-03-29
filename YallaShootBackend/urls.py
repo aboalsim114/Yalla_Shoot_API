@@ -11,7 +11,7 @@ from api.views import (
     MatchRegistrationListView, MatchRegistrationDetailView,
     SportActivityListView, SportActivityDetailView,
     MessageListView, MessageDetailView,
-    RegisterView, LoginView
+    RegisterView, LoginView, NotificationListView
 )
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from django.conf import settings
@@ -36,40 +36,45 @@ urlpatterns = [
          cache_timeout=0), name='schema-redoc'),
     path('accounts/', include('allauth.urls')),
 
-    # Authentification JWT
+    # Authentification JWT-------------------------------------------------------------
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
-    # Inscription et Connexion
+    # Inscription et Connexion-------------------------------------------------------------
     path('api/register/', RegisterView.as_view(), name='register'),
     path('api/login/', LoginView.as_view(), name='login'),
 
-    # Utilisateurs
+    # Utilisateurs-------------------------------------------------------------
     path('api/users/', UserListView.as_view()),
-    path('api/users/<int:pk>/', UserDetailView.as_view()),
+    path('api/users/<uuid:pk>/', UserDetailView.as_view()),
 
-    # Profils de Joueurs
+    # Profils de Joueurs-------------------------------------------------------------
     path('api/player-profiles/', PlayerProfileListView.as_view()),
-    path('api/player-profiles/<int:pk>/', PlayerProfileDetailView.as_view()),
+    path('api/player-profiles/<uuid:pk>/', PlayerProfileDetailView.as_view()),
 
-    # Équipes
-    path('api/teams/', TeamListView.as_view()),
-    path('api/teams/<int:pk>/', TeamDetailView.as_view()),
+    # Équipes-------------------------------------------------------------
+    path('api/teams/', TeamListView.as_view(), name='team-list'),
+    path('api/teams/<uuid:pk>/', TeamDetailView.as_view()),
 
-    # Matchs
+    # Matchs-------------------------------------------------------------
     path('api/matches/', MatchListView.as_view()),
-    path('api/matches/<int:pk>/', MatchDetailView.as_view()),
+    path('api/matches/<uuid:pk>/', MatchDetailView.as_view()),
 
-    # Inscriptions aux Matchs
+    # Inscriptions aux Matchs-------------------------------------------------------------
     path('api/match-registrations/', MatchRegistrationListView.as_view()),
-    path('api/match-registrations/<int:pk>/',
+    path('api/match-registrations/<uuid:pk>/',
          MatchRegistrationDetailView.as_view()),
 
-    # Activités Sportives
+    # Activités Sportives-------------------------------------------------------------
     path('api/sport-activities/', SportActivityListView.as_view()),
-    path('api/sport-activities/<int:pk>/', SportActivityDetailView.as_view()),
+    path('api/sport-activities/<uuid:pk>/', SportActivityDetailView.as_view()),
 
-    # Messages
+    # notifications-------------------------------------------------------------
+    path('api/notifications/', NotificationListView.as_view(),
+         name='notification-list'),
+
+
+    # Messages-------------------------------------------------------------
     path('api/messages/', MessageListView.as_view()),
-    path('api/messages/<int:pk>/', MessageDetailView.as_view()),
+    path('api/messages/<uuid:pk>/', MessageDetailView.as_view()),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

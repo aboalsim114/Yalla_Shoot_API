@@ -1,6 +1,6 @@
 from .models import Message
 from rest_framework import serializers
-from api.models import User, PlayerProfile, Team, Match, MatchRegistration, SportActivity, Message
+from api.models import User, PlayerProfile, Team, Match, MatchRegistration, SportActivity, Message, Notification
 from django.contrib.auth.hashers import make_password
 
 
@@ -49,6 +49,12 @@ class MessageSerializer(serializers.ModelSerializer):
 class MessageDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Message
+        fields = '__all__'
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
         fields = '__all__'
 
 

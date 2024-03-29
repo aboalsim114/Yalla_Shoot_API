@@ -109,3 +109,21 @@ class Message(models.Model):
 
     def __str__(self):
         return f"Message from {self.sender.username} to {self.recipient.username}"
+
+
+class Notification(models.Model):
+    TYPE_CHOICES = [
+        ('join_request', 'Join Request'),
+        ('request_accepted', 'Request Accepted'),
+        ('request_refused', 'Request Refused'),
+    ]
+
+    recipient = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='notifications')
+    message = models.CharField(max_length=255)
+    type = models.CharField(max_length=20, choices=TYPE_CHOICES)
+    read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Notification to {self.recipient.username}: {self.message}"
