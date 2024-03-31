@@ -37,10 +37,10 @@ class MatchAdmin(admin.ModelAdmin):
 
 
 class MatchRegistrationAdmin(admin.ModelAdmin):
-    list_display = ('id', 'match', 'player', 'status')
+    list_display = ('id', 'match', 'user', 'status')
     list_filter = ('status',)
-    search_fields = ('match__sport', 'player__user__username', 'player__user__email',
-                     'player__user__first_name', 'player__user__last_name')
+    search_fields = ('match__sport', 'user__username', 'user__email',
+                     'user__first_name', 'user__last_name')
     ordering = ('match__sport',)
 
 

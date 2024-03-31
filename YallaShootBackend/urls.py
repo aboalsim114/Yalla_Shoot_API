@@ -8,10 +8,10 @@ from api.views import (
     PlayerProfileListView, PlayerProfileDetailView,
     TeamListView, TeamDetailView,
     MatchListView, MatchDetailView,
-    MatchRegistrationListView, MatchRegistrationDetailView,
+    MatchRegistrationCreateView, MatchRequestsListView,
     SportActivityListView, SportActivityDetailView,
     MessageListView, MessageDetailView,
-    RegisterView, LoginView, NotificationListView
+    RegisterView, LoginView, NotificationListView, OrganisatorMatchesListView, accept_match_request, reject_match_request, UserMatchRequestsView, clear_user_requests, MatchSearchView
 )
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from django.conf import settings
@@ -59,11 +59,21 @@ urlpatterns = [
     # Matchs-------------------------------------------------------------
     path('api/matches/', MatchListView.as_view()),
     path('api/matches/<uuid:pk>/', MatchDetailView.as_view()),
+    path('api/organisator-matches/', OrganisatorMatchesListView.as_view(),
+         name='organisator-matches'),
+    path('api/organisator-match-requests/', MatchRequestsListView.as_view(),
+         name='organisator-match-requests'),
+
 
     # Inscriptions aux Matchs-------------------------------------------------------------
-    path('api/match-registrations/', MatchRegistrationListView.as_view()),
-    path('api/match-registrations/<uuid:pk>/',
-         MatchRegistrationDetailView.as_view()),
+    path('api/match-requests/', MatchRequestsListView.as_view(),
+         name='match-requests'),
+    path('api/match-registrations/',
+         MatchRegistrationCreateView.as_view(), name='match-registrations'),
+    path('api/match-requests/<uuid:pk>/accept',
+         accept_match_request, name='accept-match-request'),
+    path('api/match-requests/<uuid:pk>/reject',
+         reject_match_request, name='reject-match-request'),
 
     # Activités Sportives-------------------------------------------------------------
     path('api/sport-activities/', SportActivityListView.as_view()),
@@ -73,8 +83,15 @@ urlpatterns = [
     path('api/notifications/', NotificationListView.as_view(),
          name='notification-list'),
 
+    # Recherche Match-------------------------------------------------------------
+    path('api/matches/search/<str:sport>/<str:location>/',
+         MatchSearchView.as_view(), name='match-search'),
 
+
+    path('api/clear-requests/', clear_user_requests,
+         name='clear_all_requests'),
     # Messages-------------------------------------------------------------
     path('api/messages/', MessageListView.as_view()),
     path('api/messages/<uuid:pk>/', MessageDetailView.as_view()),
+    path('api/user-requests/', UserMatchRequestsView.as_view(), name='user-requests'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

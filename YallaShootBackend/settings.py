@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 
 from pathlib import Path
 import os
+from datetime import timedelta
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -159,7 +161,13 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
 }
+SIMPLE_JWT = {
+    # 1 heure, ajuste selon tes besoins
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    # 1 jour, ajuste selon tes besoins
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
 
+}
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
@@ -171,6 +179,6 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 
-CORS_ALLOW_HEADERS = ['content-type', 'x-csrftoken']
+CORS_ALLOW_HEADERS = ['content-type', 'x-csrftoken', 'authorization']
 CORS_ALLOW_METHODS = ['DELETE', 'GET', 'OPTIONS', 'PATCH', 'POST', 'PUT']
 CORS_ALLOW_CREDENTIALS = True

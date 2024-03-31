@@ -29,9 +29,25 @@ class MatchSerializer(serializers.ModelSerializer):
 
 
 class MatchRegistrationSerializer(serializers.ModelSerializer):
+    # Recevoir l'ID de l'utilisateur (joueur) comme entrée
+    user_id = serializers.UUIDField(write_only=True)
+
     class Meta:
         model = MatchRegistration
-        fields = '__all__'
+        # Utilisez user_id au lieu de player_id
+        fields = ['id', 'match',  'status', 'user_id']
+
+    def create(self, validated_data):
+        user_id = validated_data.pop('user_id', None)
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            raise serializers.ValidationError(
+                "User matching query does not exist.")
+
+        match_registration = MatchRegistration.objects.create(
+            user=user, **validated_data)
+        return match_registration
 
 
 class SportActivitySerializer(serializers.ModelSerializer):

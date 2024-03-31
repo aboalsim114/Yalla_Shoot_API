@@ -5,10 +5,11 @@ from api.serializers import RegisterSerializer, UserSerializer, PlayerProfileSer
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from rest_framework.response import Response
-from rest_framework.generics import CreateAPIView
+from rest_framework.generics import CreateAPIView, ListAPIView
 from .permissions import IsOrganisatorOrAdmin, IsOwnerOrAdmin, MessagePermission
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.views import APIView
+from rest_framework.decorators import api_view, permission_classes
 
 
 class UserListView(generics.ListCreateAPIView):
@@ -20,7 +21,6 @@ class UserListView(generics.ListCreateAPIView):
 class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [IsOwnerOrAdmin]
 
 
 class PlayerProfileListView(generics.ListCreateAPIView):
@@ -32,13 +32,12 @@ class PlayerProfileListView(generics.ListCreateAPIView):
 class PlayerProfileDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = PlayerProfile.objects.all()
     serializer_class = PlayerProfileSerializer
-    permission_classes = [IsOwnerOrAdmin]
+    permission_classes = [IsAuthenticated]
 
 
 class TeamListView(generics.ListCreateAPIView):
     queryset = Team.objects.all()
     serializer_class = TeamSerializer
-    permission_classes = [IsOrganisatorOrAdmin]
 
 
 class TeamDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -49,7 +48,6 @@ class TeamDetailView(generics.RetrieveUpdateDestroyAPIView):
 class MatchListView(generics.ListCreateAPIView):
     queryset = Match.objects.all()
     serializer_class = MatchSerializer
-    permission_classes = [IsOrganisatorOrAdmin]
 
 
 class MatchDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -57,16 +55,45 @@ class MatchDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = MatchSerializer
 
 
-class MatchRegistrationListView(generics.ListCreateAPIView):
-    queryset = MatchRegistration.objects.all()
+class MatchRequestsListView(generics.ListAPIView):
     serializer_class = MatchRegistrationSerializer
-    permission_classes = [IsOrganisatorOrAdmin]
+    permission_classes = [IsAuthenticated, IsOrganisatorOrAdmin]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_authenticated:
+            teams_owned_by_organisator = Team.objects.filter(user=user)
+            matches_of_organisator = Match.objects.filter(
+                team__in=teams_owned_by_organisator)
+            # Retourner les demandes pour ces matchs
+            return MatchRegistration.objects.filter(match__in=matches_of_organisator)
+        else:
+            # Si l'utilisateur n'est pas authentifié, ne retourner aucune demande
+            return MatchRegistration.objects.none()
 
 
-class MatchRegistrationDetailView(generics.RetrieveUpdateDestroyAPIView):
+class OrganisatorMatchesListView(ListAPIView):
+    serializer_class = MatchSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_authenticated and hasattr(user, 'team_profile'):
+            # Si l'utilisateur est un organisateur, filtrer les matchs par ses équipes
+            teams = Team.objects.filter(user=user)
+            return Match.objects.filter(team__in=teams)
+        else:
+            # Si l'utilisateur n'est pas un organisateur, ne retourner aucun match
+            return Match.objects.none()
+
+
+class MatchRegistrationCreateView(generics.ListCreateAPIView):
     queryset = MatchRegistration.objects.all()
     serializer_class = MatchRegistrationSerializer
-    permission_classes = [IsOwnerOrAdmin]
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save()
 
 
 class SportActivityListView(generics.ListCreateAPIView):
@@ -146,3 +173,71 @@ class LoginView(views.APIView):
             return Response(response_data)
         else:
             return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated, IsOrganisatorOrAdmin])
+def accept_match_request(request, pk):
+    try:
+        match_request = MatchRegistration.objects.get(pk=pk)
+        if request.user != match_request.match.team.user:
+            return Response({'error': 'Unauthorized'}, status=status.HTTP_403_FORBIDDEN)
+
+        match_request.status = 'confirmed'
+        match_request.save()
+        return Response({'status': 'accepted'})
+    except MatchRegistration.DoesNotExist:
+        return Response({'error': 'Not Found'}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated, IsOrganisatorOrAdmin])
+def reject_match_request(request, pk):
+    try:
+        match_request = MatchRegistration.objects.get(pk=pk)
+        if request.user != match_request.match.team.user:
+            return Response({'error': 'Unauthorized'}, status=status.HTTP_403_FORBIDDEN)
+
+        match_request.status = 'refused'
+        match_request.save()
+        return Response({'status': 'rejected'})
+    except MatchRegistration.DoesNotExist:
+        return Response({'error': 'Not Found'}, status=status.HTTP_404_NOT_FOUND)
+
+
+class UserMatchRequestsView(generics.ListAPIView):
+    serializer_class = MatchRegistrationSerializer
+    permission_classes = [IsOwnerOrAdmin]
+
+    def get_queryset(self):
+        """
+        Cette vue retourne une liste des demandes pour rejoindre les matchs
+        pour l'utilisateur connecté.
+        """
+        user = self.request.user
+
+        return MatchRegistration.objects.filter(user=user)
+
+
+@api_view(['DELETE'])
+def clear_user_requests(request):
+    """
+    Efface toutes les demandes de l'utilisateur actuel pour rejoindre des matchs.
+    """
+    if not request.user.is_authenticated:
+        return Response({"error": "Authentification requise"}, status=status.HTTP_401_UNAUTHORIZED)
+
+    MatchRegistration.objects.filter(user=request.user).delete()
+    return Response({"message": "Vos demandes ont été supprimées."}, status=status.HTTP_204_NO_CONTENT)
+
+
+class MatchSearchView(APIView):
+    """
+    API view pour rechercher des matchs par emplacement géographique et sport.
+    """
+
+    def get(self, request, sport, location):
+        matches = Match.objects.filter(
+            sport__iexact=sport, location__icontains=location)
+        serializer = MatchSerializer(matches, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

@@ -72,11 +72,10 @@ class MatchRegistration(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     match = models.ForeignKey(
         Match, on_delete=models.CASCADE, related_name='registrations', verbose_name=_("Match"))
-    player = models.ForeignKey(
-        PlayerProfile, on_delete=models.CASCADE, related_name='registrations', verbose_name=_("Player"))
+    user = models.ForeignKey(User, on_delete=models.CASCADE,
+                             related_name='match_registrations', verbose_name="User")
     status = models.CharField(
         max_length=255, default='pending', verbose_name=_("Status"))
-    # Suggestions for status values: 'confirmed', 'pending', 'refused'
 
     def __str__(self):
         return f"{self.player.user.username} - {self.match.sport} on {self.match.date_time}"
