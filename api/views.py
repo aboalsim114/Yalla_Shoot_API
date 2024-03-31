@@ -36,8 +36,16 @@ class PlayerProfileDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class TeamListView(generics.ListCreateAPIView):
-    queryset = Team.objects.all()
     serializer_class = TeamSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        # Retourne uniquement les équipes de l'organisateur connecté
+        return Team.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        # Assure que l'équipe est liée à l'organisateur connecté lors de la création
+        serializer.save(user=self.request.user)
 
 
 class TeamDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -75,6 +83,10 @@ class MatchRequestsListView(generics.ListAPIView):
 class OrganisatorMatchesListView(ListAPIView):
     serializer_class = MatchSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        # Filtrer les matchs en fonction des équipes appartenant à l'organisateur connecté
+        return Match.objects.filter(team__user=self.request.user)
 
     def get_queryset(self):
         user = self.request.user
