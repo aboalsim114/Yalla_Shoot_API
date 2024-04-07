@@ -65,18 +65,19 @@ class MatchDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 class MatchRequestsListView(generics.ListAPIView):
     serializer_class = MatchRegistrationSerializer
-    permission_classes = [IsAuthenticated, IsOrganisatorOrAdmin]
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         user = self.request.user
         if user.is_authenticated:
+            user_requests = MatchRegistration.objects.filter(user=user)
             teams_owned_by_organisator = Team.objects.filter(user=user)
             matches_of_organisator = Match.objects.filter(
                 team__in=teams_owned_by_organisator)
-            # Retourner les demandes pour ces matchs
-            return MatchRegistration.objects.filter(match__in=matches_of_organisator)
+            organisator_requests = MatchRegistration.objects.filter(
+                match__in=matches_of_organisator)
+            return user_requests | organisator_requests
         else:
-            # Si l'utilisateur n'est pas authentifié, ne retourner aucune demande
             return MatchRegistration.objects.none()
 
 
